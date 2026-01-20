@@ -75,11 +75,14 @@ class BaseTracerTheory(BaseCalculator):
             return params
         *tracer_namespaces, cross_namespace = cls.multitracer_namespace(tracers)
         for name in cls._deterministic_bias_params:
-            param = params.pop(name)
-            for namespace in tracer_namespaces:
-                params[f"{namespace}.{name}"] = param.clone(namespace=namespace)
+            param = params.pop(name, None)
+            if param is not None:  # only if parameter exists (in case of a preselection)
+                for namespace in tracer_namespaces:
+                    params.set(param.clone(namespace=namespace))
         for name in cls._stochastic_bias_params:
-            params[name].update(namespace=cross_namespace)
+            param = params.get(name, None)
+            if param is not None:
+                param.update(namespace=cross_namespace)
         return params
 
     @classmethod
@@ -128,6 +131,7 @@ class BaseTracerTheory(BaseCalculator):
         if not self.tracers or isinstance(self.tracers, str):
             return False
         return True
+
 
 class BaseTracerTwoPointTheory(BaseTracerTheory):
     _ntracers = 2
